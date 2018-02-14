@@ -1,0 +1,93 @@
+---
+title: "Project Machine Learning"
+author: "Kassim"
+date: "08/02/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(12367)
+library(tidyverse)
+require(lubridate)
+library(caret)
+
+url.training <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+url.testing <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+training <- read_csv(file = url.training, na = c("NA","#DIV/0!",""))
+testing <- read_csv(file = url.testing, na =c("NA","#DIV/0!",""))
+
+
+
+```
+##Learning about the dataset and adjusting some variavles
+###I got some errors when runing the train method because has some missings values. So I kept only class column and the coluns that has numeric values. Obs: Removed all calculated columns, they have to much NA. 
+```{r}
+
+  ##removed all calculated columns, they have to much NA. 
+  training <- training[, !grepl("total_|kurtosis_|skewness_|max_|min_|amplitude_|var_|avg_|stddev_|timestamp|window|X1|user_name", colnames(training))]
+
+  #transform classe in factor
+  training$classe <- as.factor(training$classe)
+  print('original file length')
+  nrow(training)
+  #since the datasource has 3 rows empty, I choose to remove all rows that has NA
+  training <- training[complete.cases(training),]
+  print('usinging complete.cases in training file')
+  nrow(training)
+  summary(training)
+  
+  ##Repeat with test source
+  testing <- testing[, !grepl("total_|kurtosis_|skewness_|max_|min_|amplitude_|var_|avg_|stddev_|timestamp|window|X1|user_name", colnames(testing))]
+```
+##how many classes exist and how much of each ?
+```{r}
+  table(training$classe)
+  prop.table(table(training$classe))
+```
+
+
+#Training the model
+##Create a partition to train and to test
+##Create 5 folds to train
+```{r}
+  partition <- createDataPartition(training$classe, p= 0.6, list = F)
+  train <- training[partition,]
+  test <- training[-partition,] 
+
+  
+  traincontrl <- trainControl( method = "repeatedcv", number = 5, repeats = 3)
+  
+  model.rf <- train(classe ~ ., data = train, trControl = traincontrl, method = "rf")
+  model.gbm <- train(classe ~ ., data = train, trControl = traincontrl, method = "gbm")
+  
+  model.rf 
+  model.gbm  
+  
+  plot(model.rf)
+  plot(model.gbm)
+```
+#Because GBM train resulted in 95.8% of accuracy and random forest had 98.8%, I choose rf model
+```{r}
+
+  model.gbm.trained <- predict(model.gbm, newdata=train[,-49])
+  confusionMatrix(model.gbm.trained, train$classe)
+  
+  
+  
+  model.rf.trained <- predict(model.rf, newdata=train[,-49])
+  confusionMatrix(model.rf.trained, train$classe)
+```
+###And the confusion matrix of RF predict got 100% of accuracy.
+##Lets try with test data source
+
+```{r}
+  resulttesting <- predict(model.rf, testing, method = "class")
+
+  table(resulttesting)
+  prop.table(table(resulttesting))
+```
+
+
+
