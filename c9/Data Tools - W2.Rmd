@@ -1,0 +1,21 @@
+---
+title: "Data Tools - C9W2"
+author: "Kassim"
+date: "14/02/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#install.packages("leaflet")
+library(leaflet)
+```
+February - 02 - 2018
+```{r}
+m <- leaflet() %>%
+  addTiles() %>%  # Add default OpenStreetMap map tiles
+  addMarkers(lng=-46.656, lat=-23.5615, popup="MASP Museun") %>%
+  addMarkers(lng=-46.6601, lat=-23.559, popup="Conjunto Nascional")
+m  # Print the map
+
+```
+
